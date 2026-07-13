@@ -2,12 +2,15 @@ import os
 from typing import Optional
 
 import uvicorn
+import time
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from openai import OpenAI
 from pydantic import BaseModel
 
 load_dotenv()
+
+start_time = time.time()
 
 API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
@@ -61,6 +64,13 @@ app = FastAPI(title="Mini LLM Backend")
 async def chat(request: ChatRequest):
     response = await generate_response(request.prompt, request.temperature, request.max_tokens)
     return {"response": response, "model": MODEL}
+
+
+@app.get("/health")
+async def health():
+    """Basic health endpoint showing service status and uptime (seconds)."""
+    uptime = int(time.time() - start_time)
+    return {"status": "ok", "uptime": uptime}
 
 
 if __name__ == "__main__":
