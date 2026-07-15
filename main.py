@@ -5,6 +5,7 @@ import uvicorn
 import time
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel
 
@@ -39,8 +40,6 @@ async def generate_response(prompt: str, temperature: float, max_tokens: Optiona
     if not API_KEY:
         raise HTTPException(status_code=500, detail="API_KEY is not set")
 
-    safe_max_tokens = min(max(max_tokens or DEFAULT_MAX_TOKENS, 32), 160)
-
     try:
         completion = client.chat.completions.create(
             model=MODEL,
@@ -49,15 +48,24 @@ async def generate_response(prompt: str, temperature: float, max_tokens: Optiona
                 {"role": "user", "content": truncate_prompt(prompt)},
             ],
             temperature=min(max(temperature, 0.0), 0.7),
-            max_completion_tokens=safe_max_tokens,
             timeout=REQUEST_TIMEOUT,
         )
+        print(completion.choices[0].message)
+        print(completion.choices[0].finish_reason)
         return completion.choices[0].message.content or ""
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 app = FastAPI(title="Mini LLM Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Svelte's default dev server port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post("/chat")
