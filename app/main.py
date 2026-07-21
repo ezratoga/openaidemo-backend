@@ -9,6 +9,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel
 
+app = FastAPI(title="Mini LLM Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Svelte's default dev server port
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 load_dotenv()
 
 start_time = time.time()
@@ -55,17 +65,6 @@ async def generate_response(prompt: str, temperature: float, max_tokens: Optiona
         return completion.choices[0].message.content or ""
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-app = FastAPI(title="Mini LLM Backend")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Svelte's default dev server port
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.post("/chat")
